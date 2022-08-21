@@ -1,0 +1,62 @@
+3)Display the total number of customers based on gender who have placed orders of worth at least Rs.3000.
+
+SELECT COUNT(customerDetails.CUS_ID) AS No_of_Customer,customerDetails.CUS_GENDER
+FROM customer AS customerDetails  INNER JOIN
+(SELECT sum(orderDetails.ORD_Amount) as order_amt, orderDetails.CUS_ID FROM `order` AS orderDetails group by orderDetails.CUS_ID having sum(ORD_Amount)>3000)
+orderDetailsAtLeast ON customerDetails.CUS_ID = orderDetailsAtLeast.CUS_ID GROUP BY customerDetails.CUS_GENDER;
+
+
+
+4)Display all the orders along with product name ordered by a customer having Customer_Id=2
+
+select ord.*,pro_name from order_directory.order ord
+inner join (select pricing_id,pro_name from product p inner join supplier_pricing sp on p.pro_id=sp.pro_id) pp
+on ord.pricing_id=pp.pricing_id where ord.cus_id=2;
+
+5)Display the Supplier details who can supply more than one product.
+
+SELECT s.* FROM supplier s
+inner join (select sp.pro_id,supp_id from product p inner join supplier_pricing sp on p.pro_id=sp.pro_id) pp
+on s.supp_id=pp.supp_id group by s.supp_id having count(pro_id)>1;
+
+6)Find the least expensive product from each category and print the table with category id, name, product name and price of the product
+
+SELECT c.*,p.pro_name,min(supp_price) FROM CATEGORY C 
+INNER JOIN product P
+ON C.CAT_ID=p.cat_id
+inner join supplier_pricing sp
+on p.pro_id=sp.pro_id
+group by cat_id  order by cat_id
+
+7. Display the Id and Name of the Product ordered after “2021-10-05”.
+
+SELECT pp.pro_id,pro_name,ord_date FROM product pr
+inner join
+(select sp.pro_id,od.ord_date from supplier_pricing sp inner join order_directory.order od on sp.pricing_id=od.pricing_id) pp
+on pr.pro_id=pp.pro_id where ord_date>'2021-10-05';
+
+8)Display customer name and gender whose names start or end with character 'A'.
+
+SELECT * FROM CUSTOMER WHERE CUS_NAME LIKE 'A%' or CUS_NAME LIKE '%A';
+
+
+9)Create a stored procedure to display supplier id, name, rating and Type_of_Service. For Type_of_Service, 
+If rating =5, print “Excellent Service”,If rating >4 print “Good Service”, If rating >2 print “Average Service” else print “Poor Service”.
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `Question_9`()
+BEGIN
+
+select  supp_id,supp_name,sum_of_rating/count_of_rating as rating,
+case when rating=5 then 'Excellent Service'
+when rating=4 then 'Good Service'
+when rating=2 then 'Average Service'
+else 'Poor Service' end as Type_of_Service from (select
+sp.SUPP_ID supp_id,SUPP_NAME supp_name,RAT_RATSTARS rating,sum(RAT_RATSTARS) sum_of_rating,count(RAT_RATSTARS) count_of_rating from supplier s inner join supplier_pricing sp
+on s.supp_id=sp.supp_id inner join order_directory.order ord on sp.pricing_id=ord.pricing_id
+inner join rating r on ord.ord_id=r.ord_id group by sp.supp_id) a;
+
+END
+
+
+------------------------------****************************************************************************----------------------------------------------------------------------------
+
